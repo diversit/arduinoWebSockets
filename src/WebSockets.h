@@ -34,7 +34,7 @@
 #define NODEBUG_WEBSOCKETS
 #endif
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ARDUINO_RedBear_Duo)
 #define WEBSOCKETS_MAX_DATA_SIZE  (15*1024)
 #define WEBSOCKETS_USE_BIG_MEM
 #else
@@ -48,16 +48,26 @@
 #define NETWORK_ESP8266         (1)
 #define NETWORK_W5100           (2)
 #define NETWORK_ENC28J60        (3)
+#define NETWORK_REDBEAR_DUO     (4)
 
 // max size of the WS Message Header
 #define WEBSOCKETS_MAX_HEADER_SIZE  (14)
 
 // select Network type based
 #if defined(ESP8266) || defined(ESP31B)
+#error "ESP OR ESP31B"
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266
 //#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266_ASYNC
+
+#elif defined(ARDUINO_RedBear_Duo)
+#error "DUO"
+#define WEBSOCKETS_NETWORK_TYPE NETWORK_REDBEAR_DUO
+
 #else
+
+#error "OTHER"
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_W5100
+
 #endif
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
@@ -94,15 +104,33 @@
 #define WEBSOCKETS_NETWORK_CLASS WiFiClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS WiFiServer
 
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+
+#if !defined(ARDUINO_RedBear_Duo)
+#error "network type REDBEAR_DUO only possible on Red Bear DUO device!"
+#endif
+
+// in spark_wiring_tcpserver.h, spark_wiring_tcpclient.h
+// default included so no additional include needed
+#define WEBSOCKETS_NETWORK_CLASS TCPClient
+#define WEBSOCKETS_NETWORK_SERVER_CLASS TCPServer
+
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_W5100)
 
+#if defined(ARDUINO_RedBear_Duo)
+#error "Duo should use other code!"
+#endif
+
+#error "SHOULD NOT BE HERE"
 #include <Ethernet.h>
 #include <SPI.h>
+#error "OR HERE"
 #define WEBSOCKETS_NETWORK_CLASS EthernetClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS EthernetServer
 
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_ENC28J60)
 
+#error "NEITHER HERE"
 #include <UIPEthernet.h>
 #define WEBSOCKETS_NETWORK_CLASS UIPClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS UIPServer

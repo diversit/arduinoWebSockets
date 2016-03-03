@@ -49,6 +49,8 @@ WebSocketsServer::~WebSocketsServer() {
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
     _server->close();
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+    _server->stop();
 #else
     // TODO how to close server?
 #endif
@@ -306,6 +308,7 @@ void WebSocketsServer::setAuthorization(const char * auth) {
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266) || (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
 /**
+ * TODO Add DUO?
  * get an IP for a client
  * @param num uint8_t client id
  * @return IPAddress
@@ -496,6 +499,7 @@ bool WebSocketsServer::clientIsConnected(WSclient_t * client) {
  */
 void WebSocketsServer::handleNewClients(void) {
 
+// HIER ANDERS DOEN, ZIE WEBSERVER EXAMPLE
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
     while(_server->hasClient()) {
 #endif
@@ -707,6 +711,3 @@ void WebSocketsServer::handleHeader(WSclient_t * client, String * headerLine) {
         }
     }
 }
-
-
-
