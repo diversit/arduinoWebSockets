@@ -410,7 +410,12 @@ void WebSocketsClient::sendHeader(WSclient_t * client) {
 
     handshake += "\r\n";
 
+    #ifdef REDBEAR_DUO
+    // TCPClient expects other type but since string contains valid chars should be safe to case
+    client->tcp->write((const uint8_t *)handshake.c_str(), handshake.length());
+    #else
     client->tcp->write(handshake.c_str(), handshake.length());
+    #endif
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
         client->tcp->readStringUntil('\n', &(client->cHttpLine), std::bind(&WebSocketsClient::handleHeader, this, client, &(client->cHttpLine)));
@@ -617,6 +622,3 @@ void WebSocketsClient::asyncConnect() {
 }
 
 #endif
-
-
-

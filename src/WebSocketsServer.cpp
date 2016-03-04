@@ -502,18 +502,25 @@ void WebSocketsServer::handleNewClients(void) {
 // HIER ANDERS DOEN, ZIE WEBSERVER EXAMPLE
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
     while(_server->hasClient()) {
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+    // DEBUG_WEBSOCKETS("[WS-Client] Duo: check client is connected.\n");
+    WEBSOCKETS_NETWORK_CLASS client = _server->available();
+    if (client.available()) {
 #endif
         bool ok = false;
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
         // store new connection
         WEBSOCKETS_NETWORK_CLASS * tcpClient = new WEBSOCKETS_NETWORK_CLASS(_server->available());
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+        DEBUG_WEBSOCKETS("[WS-Client] using Duo TCPClient.\n");
+        WEBSOCKETS_NETWORK_CLASS * tcpClient = &client;
 #else
         WEBSOCKETS_NETWORK_CLASS * tcpClient = new WEBSOCKETS_NETWORK_CLASS(_server->available());
 #endif
 
         if(!tcpClient) {
-            DEBUG_WEBSOCKETS("[WS-Client] creating Network class failed!");
+            DEBUG_WEBSOCKETS("[WS-Client] creating Network class failed!\n");
             return;
         }
 
@@ -532,7 +539,12 @@ void WebSocketsServer::handleNewClients(void) {
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266)
         delay(0);
-    }
+    } // end while _server->hasClient()
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+    } // end if client.available()
+    // else {
+    //   DEBUG_WEBSOCKETS("[WS-Server] Duo: client not available.\n");
+    // }
 #endif
 
 }
@@ -631,7 +643,7 @@ void WebSocketsServer::handleHeader(WSclient_t * client, String * headerLine) {
         DEBUG_WEBSOCKETS("[WS-Server][%d][handleHeader]  - cProtocol: %s\n", client->num, client->cProtocol.c_str());
         DEBUG_WEBSOCKETS("[WS-Server][%d][handleHeader]  - cExtensions: %s\n", client->num, client->cExtensions.c_str());
         DEBUG_WEBSOCKETS("[WS-Server][%d][handleHeader]  - cVersion: %d\n", client->num, client->cVersion);
-        DEBUG_WEBSOCKETS("[WS-Server][%d][handleHeader]  - base64Authorization: %s\n", client->num, client->base64Authorization);
+        // DEBUG_WEBSOCKETS("[WS-Server][%d][handleHeader]  - base64Authorization: %s\n", client->num, client->base64Authorization);
 
         bool ok = (client->cIsUpgrade && client->cIsWebsocket);
 
@@ -678,20 +690,38 @@ void WebSocketsServer::handleHeader(WSclient_t * client, String * headerLine) {
                     "Connection: Upgrade\r\n"
                     "Sec-WebSocket-Version: 13\r\n"
                     "Sec-WebSocket-Accept: ");
+
+            #ifdef REDBEAR_DUO
+            // TCPClient expects other type but since string contains valid chars should be safe to case
+            client->tcp->write((const uint8_t *)sKey.c_str(), sKey.length());
+            #else
             client->tcp->write(sKey.c_str(), sKey.length());
+            #endif
 
             if(_origin.length() > 0) {
                 String origin = "\r\nAccess-Control-Allow-Origin: ";
                 origin += _origin;
                 origin += "\r\n";
+
+                #ifdef REDBEAR_DUO
+                // TCPClient expects other type but since string contains valid chars should be safe to case
+                client->tcp->write((const uint8_t *)origin.c_str(), origin.length());
+                #else
                 client->tcp->write(origin.c_str(), origin.length());
+                #endif
             }
 
             if(client->cProtocol.length() > 0) {
                 String protocol = "\r\nSec-WebSocket-Protocol: ";
                 protocol += _protocol;
                 protocol += "\r\n";
+
+                #ifdef REDBEAR_DUO
+                // TCPClient expects other type but since string contains valid chars should be safe to case
+                client->tcp->write((const uint8_t *)protocol.c_str(), protocol.length());
+                #else
                 client->tcp->write(protocol.c_str(), protocol.length());
+                #endif
             } else {
                 client->tcp->write("\r\n");
             }

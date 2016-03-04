@@ -148,7 +148,11 @@ bool WebSockets::sendFrame(WSclient_t * client, WSopcode_t opcode, uint8_t * pay
     // byte 0
     *headerPtr = 0x00;
     if(fin) {
+      #ifdef REDBEAR_DUO
+        *headerPtr |= 1 << 7;
+      #else
         *headerPtr |= bit(7);    ///< set Fin
+      #endif
     }
     *headerPtr |= opcode;        ///< set opcode
     headerPtr++;
@@ -156,7 +160,11 @@ bool WebSockets::sendFrame(WSclient_t * client, WSopcode_t opcode, uint8_t * pay
     // byte 1
     *headerPtr = 0x00;
     if(mask) {
+      #ifdef REDBEAR_DUO
+        *headerPtr |= 1 << 7;
+      #else
         *headerPtr |= bit(7);    ///< set mask
+      #endif
     }
 
     if(length < 126) {
@@ -596,4 +604,3 @@ bool WebSockets::readCb(WSclient_t * client, uint8_t * out, size_t n, WSreadWait
 #endif
     return true;
 }
-

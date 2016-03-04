@@ -27,14 +27,21 @@
 
 #include <Arduino.h>
 
-//#define DEBUG_WEBSOCKETS(...) os_printf( __VA_ARGS__ )
+// #define DEBUG_WEBSOCKETS(...) os_printf( __VA_ARGS__ )
+#define DEBUG_WEBSOCKETS(...) Serial.printf( __VA_ARGS__ )
 
 #ifndef DEBUG_WEBSOCKETS
 #define DEBUG_WEBSOCKETS(...)
 #define NODEBUG_WEBSOCKETS
 #endif
 
-#if defined(ESP8266) || defined(ARDUINO_RedBear_Duo)
+// Detect RedBearDuo platform.
+// Cannot use ARDUINO_RedBear_Duo because it is somehow not set for compiling each file.
+#if (PLATFORM_NAME == duo)
+#define REDBEAR_DUO
+#endif
+
+#if defined(ESP8266)
 #define WEBSOCKETS_MAX_DATA_SIZE  (15*1024)
 #define WEBSOCKETS_USE_BIG_MEM
 #else
@@ -55,19 +62,14 @@
 
 // select Network type based
 #if defined(ESP8266) || defined(ESP31B)
-#error "ESP OR ESP31B"
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266
 //#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266_ASYNC
 
-#elif defined(ARDUINO_RedBear_Duo)
-#error "DUO"
+#elif defined(REDBEAR_DUO)
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_REDBEAR_DUO
-
 #else
-
-#error "OTHER"
+#error "NOT HERE"
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_W5100
-
 #endif
 
 #if (WEBSOCKETS_NETWORK_TYPE == NETWORK_ESP8266_ASYNC)
@@ -104,36 +106,27 @@
 #define WEBSOCKETS_NETWORK_CLASS WiFiClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS WiFiServer
 
-#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
-
-#if !defined(ARDUINO_RedBear_Duo)
-#error "network type REDBEAR_DUO only possible on Red Bear DUO device!"
-#endif
-
-// in spark_wiring_tcpserver.h, spark_wiring_tcpclient.h
-// default included so no additional include needed
-#define WEBSOCKETS_NETWORK_CLASS TCPClient
-#define WEBSOCKETS_NETWORK_SERVER_CLASS TCPServer
-
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_W5100)
 
-#if defined(ARDUINO_RedBear_Duo)
-#error "Duo should use other code!"
-#endif
-
-#error "SHOULD NOT BE HERE"
 #include <Ethernet.h>
 #include <SPI.h>
-#error "OR HERE"
 #define WEBSOCKETS_NETWORK_CLASS EthernetClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS EthernetServer
 
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_ENC28J60)
 
-#error "NEITHER HERE"
 #include <UIPEthernet.h>
 #define WEBSOCKETS_NETWORK_CLASS UIPClient
 #define WEBSOCKETS_NETWORK_SERVER_CLASS UIPServer
+
+#elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
+
+#ifndef REDBEAR_DUO
+#error "This network type is only supported for RedBear Duo boards"
+#endif
+
+#define WEBSOCKETS_NETWORK_CLASS TCPClient
+#define WEBSOCKETS_NETWORK_SERVER_CLASS TCPServer
 
 #else
 #error "no network type selected!"
