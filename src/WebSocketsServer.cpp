@@ -505,7 +505,7 @@ void WebSocketsServer::handleNewClients(void) {
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
     // DEBUG_WEBSOCKETS("[WS-Client] Duo: check client is connected.\n");
     WEBSOCKETS_NETWORK_CLASS client = _server->available();
-    if (client.available()) {
+    if (client.status() > 0) {
 #endif
         bool ok = false;
 
@@ -513,7 +513,7 @@ void WebSocketsServer::handleNewClients(void) {
         // store new connection
         WEBSOCKETS_NETWORK_CLASS * tcpClient = new WEBSOCKETS_NETWORK_CLASS(_server->available());
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
-        DEBUG_WEBSOCKETS("[WS-Client] using Duo TCPClient.\n");
+        DEBUG_WEBSOCKETS("[WS-Server] using Duo TCPClient.\n");
         WEBSOCKETS_NETWORK_CLASS * tcpClient = &client;
 #else
         WEBSOCKETS_NETWORK_CLASS * tcpClient = new WEBSOCKETS_NETWORK_CLASS(_server->available());
@@ -541,7 +541,7 @@ void WebSocketsServer::handleNewClients(void) {
         delay(0);
     } // end while _server->hasClient()
 #elif (WEBSOCKETS_NETWORK_TYPE == NETWORK_REDBEAR_DUO)
-    } // end if client.available()
+    } // end if client.status() == 1
     // else {
     //   DEBUG_WEBSOCKETS("[WS-Server] Duo: client not available.\n");
     // }
@@ -570,11 +570,15 @@ void WebSocketsServer::handleClientData(void) {
                     }
                         break;
                     case WSC_CONNECTED:
+                    {
                         WebSockets::handleWebsocket(client);
-                        break;
+                    }
+                      break;
                     default:
+                    {
                         WebSockets::clientDisconnect(client, 1002);
-                        break;
+                    }
+                      break;
                 }
             }
         }
